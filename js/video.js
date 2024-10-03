@@ -15,12 +15,29 @@ function getTimeString(time){
     return `${hour}hour ${minute} minute ${reminingSecond}second`;
 }
 
+
+const removeActiveBtnClass=()=>{
+    const buttons = document.getElementsByClassName("category-btn");
+    console.log(buttons);
+    for(let btn of buttons){
+        btn.classList.remove("active");
+    }
+}
 // load categories videos 
 const loadCategoryVideos = (id) =>{
     // alert(id);
     fetch(`https://openapi.programming-hero.com/api/phero-tube/category/${id}`)
         .then(res => res.json())
-        .then(data =>displayVideos(data.category))
+        .then(data =>{
+            // sobaike active class remove korao
+            removeActiveBtnClass()
+
+            // id er class ke active korao
+            const activeBtn = document.getElementById(`btn-${id}`);
+            activeBtn.classList.add("active");
+            displayVideos(data.category);
+        }
+        )
         .catch(error => console.log(error));
 }
 
@@ -32,7 +49,7 @@ const displayCategories = (categories) => {
         // create a button
         const buttonContainer = document.createElement("div");
         buttonContainer.innerHTML = `
-            <button onclick="loadCategoryVideos(${item.category_id})" class="btn">
+            <button id="btn-${item.category_id}" onclick="loadCategoryVideos(${item.category_id})" class="btn category-btn">
                 ${item.category}
             </button>
         `
@@ -46,31 +63,30 @@ loadCategories();
 
 
 // load videos 
-const loadVideos = () => {
-    fetch('https://openapi.programming-hero.com/api/phero-tube/videos')
+const loadVideos = (searchText ="") => {
+    fetch(`https://openapi.programming-hero.com/api/phero-tube/videos?title=${searchText}`)
         .then(res => res.json())
         .then(data => displayVideos(data.videos))
         .catch(error => console.log(error))
 }
 
-// const demoCard = {
-//     "category_id": "1001",
-//     "video_id": "aaaa",
-//     "thumbnail": "https://i.ibb.co/L1b6xSq/shape.jpg",
-//     "title": "Shape of You",
-//     "authors": [
-//         {
-//             "profile_picture": "https://i.ibb.co/D9wWRM6/olivia.jpg",
-//             "profile_name": "Olivia Mitchell",
-//             "verified": ""
-//         }
-//     ],
-//     "others": {
-//         "views": "100K",
-//         "posted_date": "16278"
-//     },
-//     "description": "Dive into the rhythm of 'Shape of You,' a captivating track that blends pop sensibilities with vibrant beats. Created by Olivia Mitchell, this song has already gained 100K views since its release. With its infectious melody and heartfelt lyrics, 'Shape of You' is perfect for fans looking for an uplifting musical experience. Let the music take over as Olivia's vocal prowess and unique style create a memorable listening journey."
-// }
+const loadDetails = async (videoId)=>{
+    console.log(videoId);
+    const uri = `https://openapi.programming-hero.com/api/phero-tube/video/${videoId}`
+    const res = await fetch(uri);
+    const data = await res.json();
+    displayDetails(data.video);
+}
+
+const displayDetails =(video)=>{
+    console.log(video);
+    const detailContainer = document.getElementById("modal-content");
+    detailContainer.innerHTML =`
+        <img src="${video.thumbnail}" />
+        <p>${video.description}</p>
+    `
+    document.getElementById("customModal").showModal();
+}
 loadVideos()
 const displayVideos = (videos) => {
     const videoContainer = document.getElementById('videos');
@@ -113,7 +129,7 @@ const displayVideos = (videos) => {
                 <p>${video.authors[0].profile_name}</p>
                 ${video.authors[0].verified === true ? '<img class="w-5 h-5" src="https://img.icons8.com/?size=100&id=D9RtvkuOe31p&format=png&color=000000" />':""}
             </div>
-            <p></p>
+            <p><button onclick="loadDetails('${video.video_id}')" class="btn btn-sm btn-error">details</button></p>
         </div>
   </div>
         `;
@@ -121,3 +137,7 @@ const displayVideos = (videos) => {
     })
 
 }
+
+document.getElementById('search-input').addEventListener("keyup", (e)=>{
+    loadVideos(e.target.value);
+})
